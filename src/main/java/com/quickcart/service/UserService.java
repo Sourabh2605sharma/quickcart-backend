@@ -4,6 +4,7 @@ import com.quickcart.dto.UserRequest;
 import com.quickcart.entity.User;
 import com.quickcart.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -11,15 +12,23 @@ import org.springframework.stereotype.Service;
 public class UserService {
 
     private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public User register(UserRequest request) {
-        User user = new User(null, request.getEmail(), request.getPassword(), request.getName());
-        return userRepository.save(user);
-    }
 
-    public User login(String email, String password) {
-        return userRepository.findByEmail(email)
-                .filter(u -> u.getPassword().equals(password))
-                .orElseThrow(() -> new RuntimeException("Invalid credentials"));
+        User user = new User();
+
+        user.setEmail(request.getEmail());
+        user.setName(request.getName());
+
+        // encrypt password before saving
+        user.setPassword(
+                passwordEncoder.encode(request.getPassword())
+        );
+
+        // default role
+        user.setRole("USER");
+
+        return userRepository.save(user);
     }
 }
